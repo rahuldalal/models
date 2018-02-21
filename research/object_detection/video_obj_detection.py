@@ -27,6 +27,11 @@ from utils import label_map_util
 
 from utils import visualization_utils as vis_util
 
+from darkflow.net.build import TFNet
+
+# prevent tensorflow from using gpu ...change when a powerful gpu is available
+os.environ["CUDA_VISIBLE_DEVICES"]="-1" 
+
 # ## Helper code
 
 # In[8]:
@@ -37,6 +42,9 @@ def load_image_into_numpy_array(image):
       (im_height, im_width, 3)).astype(np.uint8)
 
 # # Model preparation
+
+#Darflow model
+options = {"model": "cfg/yolo.cfg", "load": "bin/yolo.weights", "threshold": 0.1}
 
 # ## Variables
 #
@@ -117,6 +125,9 @@ with detection_graph_2.as_default():
       serialized_graph = fid.read()
       od_graph_def_2.ParseFromString(serialized_graph)
       tf.import_graph_def(od_graph_def_2, name='')
+
+# Load darkflow
+tfnet = TFNet(options)
 
 # ## Loading label map
 # Label maps map indices to category names, so that when our convolution network predicts `5`, we know that this corresponds to `airplane`.  Here we use internal utility functions, but anything that returns a dictionary mapping integers to appropriate string labels would be fine
@@ -199,6 +210,10 @@ while True:
                   category_index,
                   use_normalized_coordinates=True,
                   line_thickness=8)
+
+    # Darkflow detections
+    result = tfnet.return_predict(image_np)
+
     cv2.imshow('object detection', cv2.resize(image_np, (800,600)))
     if cv2.waitKey(25) & 0xFF == ord('q'):
         cv2.destroyAllWindows()
